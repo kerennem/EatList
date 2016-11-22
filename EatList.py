@@ -1,6 +1,5 @@
 __author__ = 'nemzer'
 
-
 import easygui as eg
 import random
 import math
