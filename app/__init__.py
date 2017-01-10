@@ -1,4 +1,4 @@
-from flask import Flask,abort,make_response, jsonify
+from flask import Flask,abort,make_response,request, jsonify
 
 app = Flask(__name__)
 tasks = [
@@ -16,12 +16,12 @@ tasks = [
     }
 ]
 
-
+#Ask for all tasks
 @app.route('/todo/api/v1.0/tasks', methods=['GET'])
 def get_tasks():
     return jsonify({'tasks': tasks})
 
-
+#Ask for a specific task
 @app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['GET'])
 def get_task(task_id):
     task = [task for task in tasks if task['id'] == task_id]
@@ -29,10 +29,55 @@ def get_task(task_id):
         abort(404)
     return jsonify({'task': task[0]})
 
+
 #Handle if there is error 404.
 @app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
+
+#Insert new task
+@app.route('/todo/api/v1.0/tasks',methods=['POST'])
+def create_task():
+    if not request.json or not 'title' in request.json:
+        abort(400)
+    task = {
+        'id': tasks[-1]['id'] + 1,
+        'title': request.json['title'],
+        'description': request.json.get('description', ""),
+        'done': False
+    }
+    tasks.append(task)
+    return jsonify({'task': task}), 201
+
+
+#Update task
+@app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['PUT'])
+def update_task(task_id):
+    task = [task for task in tasks if task['id']==task_id]
+    if len(task)==0:
+        abort(404)
+    if not request.json:
+        abort(404)
+    if 'title' in request.json and type(request.json['title']) != unicode:
+        abort(404)
+    if 'description' in request.json and type(request.json['description']) is not unicode:
+        abort(404)
+    if 'done' in request.json and type(request.json['done']) is not bool:
+        abort(404)
+    tasks[0]['title'] = request.json.get('title' ,tasks[0]['title'])
+    tasks[0]['description'] = request.json.get('description', tasks[0]['description'])
+    tasks[0]['done'] = request.json.get('done', tasks[0]['done'])
+    return jsonify({'task':task[0]})
+
+
+#Delete task
+# @app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['DELETE'])
+# def delete_task(task_id):
+#     task = [task for task in tasks if task['id']==task_id]
+#     if len(task)==0:
+#         abort(404)
+#     tasks.remove(task[0])
+#     return jsonify({'task',tasks[0]})
 
 if __name__ == '__main__':
     app.run(debug=True)
