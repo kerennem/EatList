@@ -1,4 +1,4 @@
-from flask import Flask,abort,make_response,request, jsonify
+from flask import Flask,abort,make_response,request,url_for,jsonify
 
 app = Flask(__name__)
 tasks = [
@@ -19,7 +19,7 @@ tasks = [
 #Ask for all tasks
 @app.route('/todo/api/v1.0/tasks', methods=['GET'])
 def get_tasks():
-    return jsonify({'tasks': tasks})
+    return jsonify({'tasks': [make_public_task(task) for task in tasks]})
 
 #Ask for a specific task
 @app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['GET'])
@@ -71,13 +71,23 @@ def update_task(task_id):
 
 
 #Delete task
-# @app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['DELETE'])
-# def delete_task(task_id):
-#     task = [task for task in tasks if task['id']==task_id]
-#     if len(task)==0:
-#         abort(404)
-#     tasks.remove(task[0])
-#     return jsonify({'task',tasks[0]})
+@app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    task = [task for task in tasks if task['id']==task_id]
+    if len(task)==0:
+        abort(404)
+    tasks.remove(task[0])
+    return jsonify({'task',tasks[0]})
+
+def make_public_task(task):
+    new_task = {}
+    for field in task:
+        if field== 'id':
+            new_task['uri'] =url_for('get_task',task_id=task['id'] ,external = true)
+        else:
+            new_task[field] = task[field]
+        return  new_task
+
 
 if __name__ == '__main__':
     app.run(debug=True)
